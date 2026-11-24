@@ -41,5 +41,17 @@ if (named < 1 || named > 100) {
 }
 
 mkdirSync(outputDir, { recursive: true });
-writeFileSync(join(outputDir, 'BOUNTY.json'), raw);
+const targetPath = join(outputDir, 'BOUNTY.json');
+writeFileSync(targetPath, raw);
+
+// Read the copy back and prove it is the same list we validated: a truncated
+// or corrupted hand-off would otherwise surface only as a refused entry.
+const handed = JSON.parse(readFileSync(targetPath, 'utf8'));
+const handedCount = Array.isArray(handed?.bounties) ? handed.bounties.length : 0;
+if (handedCount !== named) {
+  console.error(`Hand-off mismatch: validated ${named} bounties, wrote ${handedCount}.`);
+  process.exit(1);
+}
+const names = Array.isArray(parsed.bounties) ? parsed.bounties : [parsed.url];
+for (const name of names) console.log(`  counted: ${name}`);
 console.log(`Handed the gate ${named} ${named === 1 ? 'bounty' : 'bounties'} from BOUNTY.json.`);
